@@ -192,7 +192,7 @@ else:
 # Plot treemap
 fig_pat = px.treemap(
     country_patents_count,
-    path=[px.Constant(selected_country), "section_code", "subclass_code"],
+    path=[px.Constant(selected_country), "section_name", "subclass_code"],
     hover_name="subclass_name",
     hover_data=[
         "section_name",
