@@ -55,7 +55,9 @@ def read_data():
     patents = gcsfs_to_pandas(fs, BUCKET_NAME, "country_patents.parquet")
     # Read country codes
     country_codes = gcsfs_to_pandas(fs, BUCKET_NAME, "country_codes.parquet")
-    return works_all, patents, country_codes
+    # Read country totals
+    country_totals = gcsfs_to_pandas(fs, BUCKET_NAME, "country_totals.parquet")
+    return works_all, patents, country_codes, country_totals
 
 
 def write_intro():
@@ -64,8 +66,11 @@ def write_intro():
     st.markdown(
         """
         What do countries innovate in? This app visualizes data on patents and scientific publications from [WIPO WIPR (Miguelez et al 2019)](https://tind.wipo.int/record/40558/files/wipo_pub_econstat_wp_58.pdf) and [OpenAlex](https://openalex.org/) respectively. The data is aggregated to the country-technology class / country-scientific concept levels.
+
+        Publications data covers the period 2010-2021. Patents data covers the period 2010-2019.
         """
     )
+
 
 # -------------------------#
 # Write intro
@@ -76,7 +81,7 @@ write_intro()
 fs = prepare_gcsfs()
 # Set GCS bucket name
 BUCKET_NAME = "country-innovation"
-works_all, patents, country_codes = read_data()
+works_all, patents, country_codes, country_totals = read_data()
 
 # -------------------------#
 # Set up sidebar - generic
@@ -109,7 +114,7 @@ selected_oa_apportion_type = st.sidebar.radio(
 )
 # Transformations
 selected_oa_transformations = st.sidebar.radio(
-    "Transformations", ["none", "rca"], key="Transformations - OpenAlex"
+    "Transformations", ["none", "rca", "market share"], key="Transformations - OpenAlex"
 )
 
 # -------------------------#
@@ -120,7 +125,7 @@ st.sidebar.markdown("# Patents")
 
 # Transformations
 selected_pat_transformations = st.sidebar.radio(
-    "Transformations", ["none", "rca"], key="Transformations - Patents"
+    "Transformations", ["none", "rca", "market share"], key="Transformations - Patents"
 )
 
 # -------------------------#
@@ -130,12 +135,90 @@ selected_pat_transformations = st.sidebar.radio(
 country_works_count = works_all[works_all.country_code == selected_country]
 country_patents_count = patents[patents.country_code == selected_country]
 
+# -------------------------#
+# Plot scatters
+# -------------------------#
+
+# Scatterplot parameters - publications
+if selected_oa_citation_constraint == "none":
+    scatter_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}"
+elif selected_oa_citation_constraint == "at least 5":
+    scatter_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}_cited"
+else:
+    raise "Invalid citation constraint"  # type: ignore
+
+# Scatterplot parameters - patents
+scatter_col_pat = "patent_count"
+
+# Add annotation
+country_totals["selected_country"] = ""
+country_totals.loc[
+    country_totals.country_code == selected_country, "selected_country"
+] = selected_country
+
+# Scatterplot - publications
+scatter_oa = px.scatter(
+    country_totals,
+    x="gdppc",
+    y=scatter_col_oa,
+    color="region",
+    size="pop",
+    log_x=True,
+    log_y=True,
+    hover_name="country_name",
+    hover_data=[
+        "country_name",
+        "region",
+        "gdppc",
+        scatter_col_oa,
+    ],
+    text="selected_country",
+    labels={"gdppc": "GDP per capita", scatter_col_oa: selected_oa_metric},
+    template="simple_white",
+)
+scatter_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
+
+
+# Scatterplot - patents
+scatter_pat = px.scatter(
+    country_totals,
+    x="gdppc",
+    y=scatter_col_pat,
+    color="region",
+    size="pop",
+    log_x=True,
+    log_y=True,
+    hover_name="country_name",
+    hover_data=[
+        "country_name",
+        "region",
+        "gdppc",
+        scatter_col_pat,
+    ],
+    text="selected_country",
+    labels={"gdppc": "GDP per capita", scatter_col_pat: "Patent Families"},
+    template="simple_white",
+)
+scatter_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
+
+
+# Plot side by side
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown(
+        "<h3 style='text-align: center;'>Publications</h3>", unsafe_allow_html=True
+    )
+    st.plotly_chart(scatter_oa, use_container_width=True)
+
+with col2:
+    st.markdown("<h3 style='text-align: center;'>Patents</h3>", unsafe_allow_html=True)
+    st.plotly_chart(scatter_pat, use_container_width=True)
 
 # -------------------------#
 # Plot OpenAlex data
 # -------------------------#
 
-st.markdown("### Publications - 2010-2021")
+st.markdown("### Publications in Scientific Fields")
 
 # Prepare plotting column - OpenAlex
 
@@ -151,31 +234,36 @@ if selected_oa_transformations == "none":
     plot_col_oa = plot_col_oa
 elif selected_oa_transformations == "rca":
     plot_col_oa = plot_col_oa + "_rca"
+elif selected_oa_transformations == "market share":
+    plot_col_oa = plot_col_oa + "_market_share"
 else:
     raise "Invalid transformation"  # type: ignore
 
 # -------------------------#
 # Plot treemap
-fig_oa = px.treemap(
-    country_works_count,
-    path=[px.Constant(selected_country), "broad_concept_name", "concept_name"],
-    values=plot_col_oa,
-)
+if selected_oa_transformations == "none":
+    fig_oa = px.treemap(
+        country_works_count,
+        path=["broad_concept_name", "concept_name"],
+        values=plot_col_oa,
+    )
+else:
+    fig_oa = px.treemap(
+        country_works_count,
+        path=["concept_name"],
+        color="broad_concept_name",
+        values=plot_col_oa,
+    )
 # fig_oa.update_traces(root_color="lightgrey")
 fig_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 
 st.plotly_chart(fig_oa, use_container_width=True)
-# # Add caption with note
-# st.caption(
-#     "Note: the treemap corresponds to journal articles published in the period 2010-2021."
-# )
-
 
 # -------------------------#
 # Plot patents data
 # -------------------------#
 
-st.markdown("### Patents - 2010-2019")
+st.markdown("### Patents in Technologies (IPC4 Subclasses)")
 
 # Prepare plotting column - patents
 
@@ -185,26 +273,37 @@ if selected_pat_transformations == "none":
     plot_col_pat = plot_col_pat
 elif selected_pat_transformations == "rca":
     plot_col_pat = plot_col_pat + "_rca"
+elif selected_pat_transformations == "market share":
+    plot_col_pat = plot_col_pat + "_market_share"
 else:
     raise "Invalid transformation"  # type: ignore
 
 # -------------------------#
 # Plot treemap
-fig_pat = px.treemap(
-    country_patents_count,
-    path=[px.Constant(selected_country), "section_code", "subclass_code"],
-    hover_name="subclass_name",
-    hover_data=[
-        "section_name",
-    ],
-    values=plot_col_pat,
-)
+if selected_pat_transformations == "none":
+    fig_pat = px.treemap(
+        country_patents_count,
+        path=["section_code", "subclass_code"],
+        color="section_code",
+        hover_name="subclass_name",
+        hover_data=[
+            "section_name",
+        ],
+        values=plot_col_pat,
+    )
+else:
+    fig_pat = px.treemap(
+        country_patents_count,
+        path=["subclass_code"],
+        color="section_code",
+        hover_name="subclass_name",
+        hover_data=[
+            "section_name",
+        ],
+        values=plot_col_pat,
+    )
 fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 st.plotly_chart(fig_pat, use_container_width=True)
-# # Add caption with note
-# st.caption(
-#     "Note: the treemap corresponds to patents published in the period 2010-2018."
-# )
 
 # -------------------------#
 # Write footer
