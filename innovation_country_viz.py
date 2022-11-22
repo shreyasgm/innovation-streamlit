@@ -104,17 +104,20 @@ st.sidebar.markdown("# Publications")
 
 # Citation count constraint
 selected_oa_citation_constraint = st.sidebar.radio(
-    "Citation count constraint", ["none", "at least 5"]
+    "Citation count constraint",
+    ["none", "at least 5"],
+    help="Minimum number of citations for a publication to be included",
 )
 # Metric - articles or citations
-selected_oa_metric = st.sidebar.radio("Metric", ["works", "citations"])
-# Type of apportioning
-selected_oa_apportion_type = st.sidebar.radio(
-    "Apportioning concepts with multiple parents", ["dominant", "equal"]
+selected_oa_metric = st.sidebar.radio(
+    "Metric", ["works", "citations"], help="Metric used to draw visualizations"
 )
 # Transformations
 selected_oa_transformations = st.sidebar.radio(
-    "Transformations", ["none", "rca", "market share"], key="Transformations - OpenAlex"
+    "Transformations",
+    ["none", "rca", "market share"],
+    key="Transformations - OpenAlex",
+    help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
 )
 
 # -------------------------#
@@ -125,7 +128,10 @@ st.sidebar.markdown("# Patents")
 
 # Transformations
 selected_pat_transformations = st.sidebar.radio(
-    "Transformations", ["none", "rca", "market share"], key="Transformations - Patents"
+    "Transformations",
+    ["none", "rca", "market share"],
+    key="Transformations - Patents",
+    help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
 )
 
 # -------------------------#
@@ -141,9 +147,9 @@ country_patents_count = patents[patents.country_code == selected_country]
 
 # Scatterplot parameters - publications
 if selected_oa_citation_constraint == "none":
-    scatter_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}"
+    scatter_col_oa = selected_oa_metric
 elif selected_oa_citation_constraint == "at least 5":
-    scatter_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}_cited"
+    scatter_col_oa = f"{selected_oa_metric}_cited"
 else:
     raise "Invalid citation constraint"  # type: ignore
 
@@ -224,9 +230,9 @@ st.markdown("### Publications in Scientific Fields")
 
 # Column to plot - citation constraint
 if selected_oa_citation_constraint == "none":
-    plot_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}"
+    plot_col_oa = f"{selected_oa_metric}"
 elif selected_oa_citation_constraint == "at least 5":
-    plot_col_oa = f"{selected_oa_metric}_{selected_oa_apportion_type}_cited"
+    plot_col_oa = f"{selected_oa_metric}_cited"
 else:
     raise "Invalid citation constraint"  # type: ignore
 # Column to plot - rca or not
