@@ -102,19 +102,29 @@ selected_country = country_codes[
 
 st.sidebar.markdown("# Publications")
 
+# Metric - articles or citations
+selected_oa_metric = st.sidebar.radio(
+    "Metric", ["works", "citations"], help="Metric used to draw visualizations"
+)
+
 # Citation count constraint
 selected_oa_citation_constraint = st.sidebar.radio(
     "Citation count constraint",
     ["none", "at least 5"],
     help="Minimum number of citations for a publication to be included",
 )
-# Metric - articles or citations
-selected_oa_metric = st.sidebar.radio(
-    "Metric", ["works", "citations"], help="Metric used to draw visualizations"
+
+# Scatterplot transformation
+selected_oa_agg_input = st.sidebar.radio(
+    "Aggregation method for scatterplot",
+    ["per capita", "total", "sophistication (expy)"],
+    help="Aggregation method for scatterplot",
+    key="Aggregation - OpenAlex",
 )
+
 # Transformations
 selected_oa_transformations = st.sidebar.radio(
-    "Transformations",
+    "Transformations for treemap",
     ["none", "rca", "market share"],
     key="Transformations - OpenAlex",
     help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
@@ -126,9 +136,17 @@ selected_oa_transformations = st.sidebar.radio(
 
 st.sidebar.markdown("# Patents")
 
+# Scatterplot transformation
+selected_pat_agg_input = st.sidebar.radio(
+    "Aggregation method for scatterplot",
+    ["per capita", "total", "sophistication (expy)"],
+    help="Aggregation method for scatterplot",
+    key="Aggregation - Patents",
+)
+
 # Transformations
 selected_pat_transformations = st.sidebar.radio(
-    "Transformations",
+    "Transformations for treemap",
     ["none", "rca", "market share"],
     key="Transformations - Patents",
     help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
@@ -145,7 +163,7 @@ country_patents_count = patents[patents.country_code == selected_country]
 # Plot scatters
 # -------------------------#
 
-# Scatterplot parameters - publications
+# Scatterplot parameters - publications - citation constraint
 if selected_oa_citation_constraint == "none":
     scatter_col_oa = selected_oa_metric
 elif selected_oa_citation_constraint == "at least 5":
@@ -153,8 +171,31 @@ elif selected_oa_citation_constraint == "at least 5":
 else:
     raise "Invalid citation constraint"  # type: ignore
 
-# Scatterplot parameters - patents
+# Scatterplot parameters - publications - aggregation
+log_oa = True
+if selected_oa_agg_input == "total":
+    scatter_col_oa = scatter_col_oa
+elif selected_oa_agg_input == "per capita":
+    scatter_col_oa = f"{scatter_col_oa}_pc"
+elif selected_oa_agg_input == "sophistication (expy)":
+    scatter_col_oa = f"{scatter_col_oa}_expy_count"
+    log_oa = False
+else:
+    raise "Invalid aggregation method"
+
+# Scatterplot parameters - patents - aggregation
 scatter_col_pat = "patent_count"
+log_pat = True
+if selected_pat_agg_input == "total":
+    scatter_col_pat = scatter_col_pat
+elif selected_pat_agg_input == "per capita":
+    scatter_col_pat = f"{scatter_col_pat}_pc"
+elif selected_pat_agg_input == "sophistication (expy)":
+    scatter_col_pat = f"{scatter_col_pat}_expy_count"
+    log_pat = False
+else:
+    raise "Invalid aggregation method"
+
 
 # Add annotation
 country_totals["selected_country"] = ""
@@ -170,7 +211,7 @@ scatter_oa = px.scatter(
     color="region",
     size="pop",
     log_x=True,
-    log_y=True,
+    log_y=log_oa,
     hover_name="country_name",
     hover_data=[
         "country_name",
@@ -179,7 +220,7 @@ scatter_oa = px.scatter(
         scatter_col_oa,
     ],
     text="selected_country",
-    labels={"gdppc": "GDP per capita", scatter_col_oa: selected_oa_metric},
+    labels={"gdppc": "GDP per capita", scatter_col_oa: "Publications (aggregated)"},
     template="simple_white",
 )
 scatter_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
@@ -193,7 +234,7 @@ scatter_pat = px.scatter(
     color="region",
     size="pop",
     log_x=True,
-    log_y=True,
+    log_y=log_pat,
     hover_name="country_name",
     hover_data=[
         "country_name",
@@ -202,7 +243,7 @@ scatter_pat = px.scatter(
         scatter_col_pat,
     ],
     text="selected_country",
-    labels={"gdppc": "GDP per capita", scatter_col_pat: "Patent Families"},
+    labels={"gdppc": "GDP per capita", scatter_col_pat: "Patent Families (aggregated)"},
     template="simple_white",
 )
 scatter_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
