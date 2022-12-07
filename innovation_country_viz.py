@@ -130,6 +130,14 @@ selected_oa_transformations = st.sidebar.radio(
     help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
 )
 
+# Coloring
+selected_oa_color_parameter = st.sidebar.radio(
+    "Color for treemap",
+    ["broad concept", "concept sophistication (prody)"],
+    key="Color - OpenAlex",
+    help="Method to use for coloring the treemap",
+)
+
 # -------------------------#
 # Set up sidebar - Patents
 # -------------------------#
@@ -152,7 +160,26 @@ selected_pat_transformations = st.sidebar.radio(
     help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
 )
 
+# Coloring
+selected_pat_color_parameter = st.sidebar.radio(
+    "Color for treemap",
+    ["patent class", "subclass sophistication (prody)"],
+    key="Color - Patents",
+    help="Method to use for coloring the treemap",
+)
+
 # -------------------------#
+# Set pre-defined color ranges for prody
+patents_prody_color_range = {"patent_count_prody_count": (778.05, 110137.46)}
+
+publications_prody_color_range = {
+    "works_prody_count": (4380.12, 56300.95),
+    "citations_prody_count": (435.53, 80618.56),
+    "works_cited_prody_count": (740.36, 73364.85),
+    "citations_cited_prody_count": (198.27, 86188.64),
+}
+# -------------------------#
+
 # Process parameters
 
 # Filter to selected country
@@ -169,7 +196,7 @@ if selected_oa_citation_constraint == "none":
 elif selected_oa_citation_constraint == "at least 5":
     scatter_col_oa = f"{selected_oa_metric}_cited"
 else:
-    raise "Invalid citation constraint"  # type: ignore
+    raise "Invalid citation constraint"
 
 # Scatterplot parameters - publications - aggregation
 log_oa = True
@@ -262,7 +289,7 @@ with col2:
     st.plotly_chart(scatter_pat, use_container_width=True)
 
 # -------------------------#
-# Plot OpenAlex data
+# Plot OpenAlex treemap
 # -------------------------#
 
 st.markdown("### Publications in Scientific Fields")
@@ -271,43 +298,64 @@ st.markdown("### Publications in Scientific Fields")
 
 # Column to plot - citation constraint
 if selected_oa_citation_constraint == "none":
-    plot_col_oa = f"{selected_oa_metric}"
+    plot_col_oa_constraint = f"{selected_oa_metric}"
 elif selected_oa_citation_constraint == "at least 5":
-    plot_col_oa = f"{selected_oa_metric}_cited"
+    plot_col_oa_constraint = f"{selected_oa_metric}_cited"
 else:
-    raise "Invalid citation constraint"  # type: ignore
+    raise ValueError("Invalid citation constraint")
+
+
 # Column to plot - rca or not
 if selected_oa_transformations == "none":
-    plot_col_oa = plot_col_oa
+    plot_col_oa = plot_col_oa_constraint
 elif selected_oa_transformations == "rca":
-    plot_col_oa = plot_col_oa + "_rca"
-elif selected_oa_transformations == "market share":
-    plot_col_oa = plot_col_oa + "_market_share"
+    plot_col_oa = plot_col_oa_constraint + "_rca"
+elif selected_oa_transformations == "market_share":
+    plot_col_oa = plot_col_oa_constraint + "_market_share"
 else:
-    raise "Invalid transformation"  # type: ignore
+    raise ValueError("Invalid transformation")
+
+# Column to plot - color
+if selected_oa_color_parameter == "concept sophistication (prody)":
+    color_col_oa = f"{plot_col_oa_constraint}_prody_count"
+elif selected_oa_color_parameter == "broad concept":
+    color_col_oa = None
+else:
+    raise ValueError("Invalid color parameter")
 
 # -------------------------#
 # Plot treemap
-if selected_oa_transformations == "none":
-    fig_oa = px.treemap(
-        country_works_count,
-        path=["broad_concept_name", "concept_name"],
-        values=plot_col_oa,
-    )
+if (
+    selected_oa_transformations == "none"
+    and selected_oa_color_parameter == "broad concept"
+):
+    fig_oa_path = ["broad_concept_name", "concept_name"]
 else:
-    fig_oa = px.treemap(
-        country_works_count,
-        path=["concept_name"],
-        color="broad_concept_name",
-        values=plot_col_oa,
-    )
-# fig_oa.update_traces(root_color="lightgrey")
+    fig_oa_path = ["concept_name"]
+
+if selected_oa_color_parameter == "concept sophistication (prody)":
+    fig_oa_color = color_col_oa
+    fig_oa_color_continous_scale = px.colors.sequential.Inferno
+    fig_oa_range_color = publications_prody_color_range[color_col_oa]
+else:
+    fig_oa_color = None
+    fig_oa_color_continous_scale = None
+    fig_oa_range_color = None
+
+fig_oa = px.treemap(
+    country_works_count,
+    path=fig_oa_path,
+    values=plot_col_oa,
+    color=fig_oa_color,
+    color_continuous_scale=fig_oa_color_continous_scale,
+    range_color=fig_oa_range_color,
+)
 fig_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 
 st.plotly_chart(fig_oa, use_container_width=True)
 
 # -------------------------#
-# Plot patents data
+# Plot patents treemap
 # -------------------------#
 
 st.markdown("### Patents in Technologies (IPC4 Subclasses)")
@@ -315,40 +363,57 @@ st.markdown("### Patents in Technologies (IPC4 Subclasses)")
 # Prepare plotting column - patents
 
 # Column to plot - rca or not
-plot_col_pat = "patent_count"
+plot_col_pat_raw = "patent_count"
 if selected_pat_transformations == "none":
-    plot_col_pat = plot_col_pat
+    plot_col_pat = plot_col_pat_raw
 elif selected_pat_transformations == "rca":
-    plot_col_pat = plot_col_pat + "_rca"
-elif selected_pat_transformations == "market share":
-    plot_col_pat = plot_col_pat + "_market_share"
+    plot_col_pat = plot_col_pat_raw + "_rca"
+elif selected_pat_transformations == "market_share":
+    plot_col_pat = plot_col_pat_raw + "_market_share"
 else:
-    raise "Invalid transformation"  # type: ignore
+    raise ValueError("Invalid transformation")
+
+# Column to plot - color
+if selected_pat_color_parameter == "subclass sophistication (prody)":
+    color_col_pat = f"{plot_col_pat_raw}_prody_count"
+elif selected_pat_color_parameter == "patent class":
+    color_col_pat = None
+else:
+    raise ValueError("Invalid color parameter")
+
 
 # -------------------------#
 # Plot treemap
-if selected_pat_transformations == "none":
-    fig_pat = px.treemap(
-        country_patents_count,
-        path=["section_code", "subclass_code"],
-        color="section_code",
-        hover_name="subclass_name",
-        hover_data=[
-            "section_name",
-        ],
-        values=plot_col_pat,
-    )
+if (
+    selected_pat_transformations == "none"
+    and selected_pat_color_parameter == "patent class"
+):
+    fig_pat_path = ["section_name", "subclass_name"]
 else:
-    fig_pat = px.treemap(
-        country_patents_count,
-        path=["subclass_code"],
-        color="section_code",
-        hover_name="subclass_name",
-        hover_data=[
-            "section_name",
-        ],
-        values=plot_col_pat,
-    )
+    fig_pat_path = ["subclass_name"]
+
+if selected_pat_color_parameter == "subclass sophistication (prody)":
+    fig_pat_color = color_col_pat
+    fig_pat_color_continous_scale = px.colors.sequential.Inferno
+    fig_pat_range_color = patents_prody_color_range[color_col_pat]
+else:
+    fig_pat_color = None
+    fig_pat_color_continous_scale = None
+    fig_pat_range_color = None
+
+fig_pat = px.treemap(
+    country_patents_count,
+    path=fig_pat_path,
+    values=plot_col_pat,
+    hover_name="subclass_name",
+    hover_data=[
+        "section_name",
+    ],
+    color=fig_pat_color,
+    color_continuous_scale=fig_pat_color_continous_scale,
+    range_color=fig_pat_range_color,
+)
+
 fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 st.plotly_chart(fig_pat, use_container_width=True)
 
