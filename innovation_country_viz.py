@@ -404,7 +404,7 @@ else:
 
 fig_pat = px.treemap(
     country_patents_count,
-    path=[px.Constant(selected_country), "subclass_name"],
+    path=fig_pat_path,
     values=plot_col_pat,
     hover_name="subclass_name",
     hover_data=[
