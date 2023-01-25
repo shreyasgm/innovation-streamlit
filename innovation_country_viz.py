@@ -90,7 +90,8 @@ works_all, patents, country_codes, country_totals = read_data()
 # st.sidebar.title("Treemap parameters")
 # Country
 selected_country_name = st.sidebar.selectbox(
-    "Country", country_codes.country_name.unique()
+    label="Country",
+    options=country_codes.country_name.unique(),
 )
 selected_country = country_codes[
     country_codes.country_name == selected_country_name
@@ -125,9 +126,12 @@ selected_oa_agg_input = st.sidebar.radio(
 # Transformations
 selected_oa_transformations = st.sidebar.radio(
     "Transformations for treemap",
-    ["none", "rca", "market share"],
+    [
+        "none",
+        "rca",
+    ],
     key="Transformations - OpenAlex",
-    help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
+    help="Transformations to apply to the data",
 )
 
 # Coloring
@@ -142,7 +146,7 @@ selected_oa_color_parameter = st.sidebar.radio(
 # Set up sidebar - Patents
 # -------------------------#
 
-st.sidebar.markdown("# Patents")
+st.sidebar.markdown("# Patents Families")
 
 # Scatterplot transformation
 selected_pat_agg_input = st.sidebar.radio(
@@ -155,9 +159,9 @@ selected_pat_agg_input = st.sidebar.radio(
 # Transformations
 selected_pat_transformations = st.sidebar.radio(
     "Transformations for treemap",
-    ["none", "rca", "market share"],
+    ["none", "rca"],
     key="Transformations - Patents",
-    help="Transformations to apply to the data. NOTE: currently, market share and rca give the same results.",
+    help="Transformations to apply to the data",
 )
 
 # Coloring
@@ -170,13 +174,13 @@ selected_pat_color_parameter = st.sidebar.radio(
 
 # -------------------------#
 # Set pre-defined color ranges for prody
-patents_prody_color_range = {"patent_count_prody_count": (778.05, 110137.46)}
+patents_prody_color_range = {"patent_count_prody_count": (778.05, 55068.73)}
 
 publications_prody_color_range = {
-    "works_prody_count": (4380.12, 56300.95),
-    "citations_prody_count": (435.53, 80618.56),
-    "works_cited_prody_count": (740.36, 73364.85),
-    "citations_cited_prody_count": (198.27, 86188.64),
+    "works_prody_count": (4380.12, 28150.47),
+    "citations_prody_count": (435.53, 40309.28),
+    "works_cited_prody_count": (740.36, 36682.43),
+    "citations_cited_prody_count": (198.27, 43094.32),
 }
 # -------------------------#
 
@@ -241,13 +245,13 @@ scatter_oa = px.scatter(
     log_y=log_oa,
     hover_name="country_name",
     hover_data=[
-        "country_name",
-        "region",
         "gdppc",
         scatter_col_oa,
     ],
-    text="selected_country",
-    labels={"gdppc": "GDP per capita", scatter_col_oa: "Publications (aggregated)"},
+    labels={
+        "gdppc": "GDP per capita",
+        scatter_col_oa: f"Publications {selected_oa_agg_input}",
+    },
     template="simple_white",
 )
 scatter_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
@@ -264,13 +268,13 @@ scatter_pat = px.scatter(
     log_y=log_pat,
     hover_name="country_name",
     hover_data=[
-        "country_name",
-        "region",
         "gdppc",
         scatter_col_pat,
     ],
-    text="selected_country",
-    labels={"gdppc": "GDP per capita", scatter_col_pat: "Patent Families (aggregated)"},
+    labels={
+        "gdppc": "GDP per capita",
+        scatter_col_pat: f"Patents {selected_pat_agg_input}",
+    },
     template="simple_white",
 )
 scatter_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25), showlegend=False)
@@ -310,8 +314,6 @@ if selected_oa_transformations == "none":
     plot_col_oa = plot_col_oa_constraint
 elif selected_oa_transformations == "rca":
     plot_col_oa = plot_col_oa_constraint + "_rca"
-elif selected_oa_transformations == "market_share":
-    plot_col_oa = plot_col_oa_constraint + "_market_share"
 else:
     raise ValueError("Invalid transformation")
 
@@ -346,6 +348,7 @@ fig_oa = px.treemap(
     country_works_count,
     path=fig_oa_path,
     values=plot_col_oa,
+    hover_name="concept_name",
     color=fig_oa_color,
     color_continuous_scale=fig_oa_color_continous_scale,
     range_color=fig_oa_range_color,
@@ -358,7 +361,7 @@ st.plotly_chart(fig_oa, use_container_width=True)
 # Plot patents treemap
 # -------------------------#
 
-st.markdown("### Patents in Technologies (IPC4 Subclasses)")
+st.markdown("### Patent Families in Technologies (IPC4 Subclasses)")
 
 # Prepare plotting column - patents
 
@@ -368,8 +371,6 @@ if selected_pat_transformations == "none":
     plot_col_pat = plot_col_pat_raw
 elif selected_pat_transformations == "rca":
     plot_col_pat = plot_col_pat_raw + "_rca"
-elif selected_pat_transformations == "market_share":
-    plot_col_pat = plot_col_pat_raw + "_market_share"
 else:
     raise ValueError("Invalid transformation")
 
@@ -403,10 +404,11 @@ else:
 
 fig_pat = px.treemap(
     country_patents_count,
-    path=fig_pat_path,
+    path=[px.Constant(selected_country), "subclass_name"],
     values=plot_col_pat,
     hover_name="subclass_name",
     hover_data=[
+        "subclass_code",
         "section_name",
     ],
     color=fig_pat_color,
