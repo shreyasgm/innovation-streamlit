@@ -248,6 +248,7 @@ scatter_oa = px.scatter(
         "gdppc",
         scatter_col_oa,
     ],
+    text="selected_country",
     labels={
         "gdppc": "GDP per capita",
         scatter_col_oa: f"Publications {selected_oa_agg_input}",
@@ -271,6 +272,7 @@ scatter_pat = px.scatter(
         "gdppc",
         scatter_col_pat,
     ],
+    text="selected_country",
     labels={
         "gdppc": "GDP per capita",
         scatter_col_pat: f"Patents {selected_pat_agg_input}",
@@ -293,10 +295,28 @@ with col2:
     st.plotly_chart(scatter_pat, use_container_width=True)
 
 # -------------------------#
+# Treemaps
+# -------------------------#
+
+# Get country total for publications
+country_total_patents_count = country_totals.loc[
+    country_totals.country_code == selected_country, "patent_count"
+].iloc[0]
+country_total_works_count = country_totals.loc[
+    country_totals.country_code == selected_country, "works"
+].iloc[0]
+country_total_citations_count = country_totals.loc[
+    country_totals.country_code == selected_country, "citations"
+].iloc[0]
+
+# -------------------------#
 # Plot OpenAlex treemap
 # -------------------------#
 
 st.markdown("### Publications in Scientific Fields")
+
+st.markdown(f"Total publications: {country_total_works_count:,.0f}")
+st.markdown(f"Total citations: {country_total_citations_count:,.0f}")
 
 # Prepare plotting column - OpenAlex
 
@@ -339,10 +359,12 @@ if selected_oa_color_parameter == "concept sophistication (prody)":
     fig_oa_color = color_col_oa
     fig_oa_color_continous_scale = px.colors.sequential.Inferno
     fig_oa_range_color = publications_prody_color_range[color_col_oa]
+    fig_oa_labels_dict = {color_col_oa: "PRODY"}
 else:
     fig_oa_color = None
     fig_oa_color_continous_scale = None
     fig_oa_range_color = None
+    fig_oa_labels_dict = None
 
 fig_oa = px.treemap(
     country_works_count,
@@ -352,6 +374,7 @@ fig_oa = px.treemap(
     color=fig_oa_color,
     color_continuous_scale=fig_oa_color_continous_scale,
     range_color=fig_oa_range_color,
+    labels=fig_oa_labels_dict,
 )
 fig_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 
@@ -362,6 +385,8 @@ st.plotly_chart(fig_oa, use_container_width=True)
 # -------------------------#
 
 st.markdown("### Patent Families in Technologies (IPC4 Subclasses)")
+
+st.markdown(f"Total patent families: {country_total_patents_count:,.0f}")
 
 # Prepare plotting column - patents
 
@@ -397,10 +422,12 @@ if selected_pat_color_parameter == "subclass sophistication (prody)":
     fig_pat_color = color_col_pat
     fig_pat_color_continous_scale = px.colors.sequential.Inferno
     fig_pat_range_color = patents_prody_color_range[color_col_pat]
+    fig_pat_labels_dict = {color_col_pat: "PRODY"}
 else:
     fig_pat_color = None
     fig_pat_color_continous_scale = None
     fig_pat_range_color = None
+    fig_pat_labels_dict = None
 
 fig_pat = px.treemap(
     country_patents_count,
@@ -414,6 +441,7 @@ fig_pat = px.treemap(
     color=fig_pat_color,
     color_continuous_scale=fig_pat_color_continous_scale,
     range_color=fig_pat_range_color,
+    labels=fig_pat_labels_dict
 )
 
 fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
