@@ -43,7 +43,7 @@ def gcsfs_to_pandas(fs, BUCKET_NAME, file_name):
     return df
 
 
-@st.experimental_memo(ttl=600)
+@st.cache_data(ttl=600)
 def read_data():
     # Get GCSFS
     fs = prepare_gcsfs()
@@ -347,13 +347,14 @@ else:
 
 # -------------------------#
 # Plot treemap
-if (
-    selected_oa_transformations == "none"
-    and selected_oa_color_parameter == "broad concept"
-):
-    fig_oa_path = ["broad_concept_name", "concept_name"]
-else:
-    fig_oa_path = ["concept_name"]
+# if (
+#     selected_oa_transformations == "none"
+#     and selected_oa_color_parameter == "broad concept"
+# ):
+#     fig_oa_path = ["broad_concept_name", "concept_name"]
+# else:
+#     fig_oa_path = ["concept_name"]
+fig_oa_path = ["broad_concept_name", "concept_name"]
 
 if selected_oa_color_parameter == "concept sophistication (prody)":
     fig_oa_color = color_col_oa
@@ -410,13 +411,14 @@ else:
 
 # -------------------------#
 # Plot treemap
-if (
-    selected_pat_transformations == "none"
-    and selected_pat_color_parameter == "patent class"
-):
-    fig_pat_path = ["section_name", "subclass_name"]
-else:
-    fig_pat_path = ["subclass_name"]
+# if (
+#     selected_pat_transformations == "none"
+#     and selected_pat_color_parameter == "patent class"
+# ):
+#     fig_pat_path = ["section_name", "subclass_name"]
+# else:
+#     fig_pat_path = ["subclass_name"]
+fig_pat_path = ["section_name", "subclass_name"]
 
 if selected_pat_color_parameter == "subclass sophistication (prody)":
     fig_pat_color = color_col_pat
