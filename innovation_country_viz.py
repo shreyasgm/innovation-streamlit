@@ -3,6 +3,7 @@ Streamlit app for visualizing OpenAlex data on a treemap.
 
 Author: Shreyas Gadgin Matha
 """
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -65,9 +66,9 @@ def write_intro():
     st.title("Country Innovation Profiles")
     st.markdown(
         """
-        What do countries innovate in? This app visualizes data on patents and scientific publications from [WIPO WIPR (Miguelez et al 2019)](https://tind.wipo.int/record/40558/files/wipo_pub_econstat_wp_58.pdf) and [OpenAlex](https://openalex.org/) respectively. The data is aggregated to the country-technology class / country-scientific concept levels.
+        What do countries innovate in? This app visualizes data on patents from [PATSTAT](https://www.epo.org/en/searching-for-patents/business/patstat) using the methodology from [WIPO WIPR (Miguelez et al 2019)](https://tind.wipo.int/record/40558/files/wipo_pub_econstat_wp_58.pdf), and on scientific publications from [OpenAlex](https://openalex.org/). The data is aggregated to the country-technology class / country-scientific concept levels.
 
-        Publications data covers the period 2010-2021. Patents data covers the period 2010-2019.
+        Publications and patents data cover the 10-year period 2013-2022.
         """
     )
 
@@ -174,13 +175,13 @@ selected_pat_color_parameter = st.sidebar.radio(
 
 # -------------------------#
 # Set pre-defined color ranges for prody
-patents_prody_color_range = {"patent_count_prody_count": (778.05, 55068.73)}
+patents_prody_color_range = {"patent_count_prody_count": (20412.18, 46355.5)}
 
 publications_prody_color_range = {
-    "works_prody_count": (4380.12, 28150.47),
-    "citations_prody_count": (435.53, 40309.28),
-    "works_cited_prody_count": (740.36, 36682.43),
-    "citations_cited_prody_count": (198.27, 43094.32),
+    "works_prody_count": (18020.53, 35572.04),
+    "citations_prody_count": (20481.44, 38344.45),
+    "works_cited_prody_count": (18803.98, 35492.67),
+    "citations_cited_prody_count": (20002.89, 38103.41),
 }
 # -------------------------#
 
@@ -368,7 +369,7 @@ else:
     fig_oa_labels_dict = None
 
 fig_oa = px.treemap(
-    country_works_count,
+    country_works_count[country_works_count[plot_col_oa] > 0],
     path=fig_oa_path,
     values=plot_col_oa,
     hover_name="concept_name",
@@ -432,7 +433,7 @@ else:
     fig_pat_labels_dict = None
 
 fig_pat = px.treemap(
-    country_patents_count,
+    country_patents_count[country_patents_count[plot_col_pat] > 0],
     path=fig_pat_path,
     values=plot_col_pat,
     hover_name="subclass_name",
@@ -443,7 +444,7 @@ fig_pat = px.treemap(
     color=fig_pat_color,
     color_continuous_scale=fig_pat_color_continous_scale,
     range_color=fig_pat_range_color,
-    labels=fig_pat_labels_dict
+    labels=fig_pat_labels_dict,
 )
 
 fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
