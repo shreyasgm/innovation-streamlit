@@ -66,7 +66,7 @@ def write_intro():
     st.title("Country Innovation Profiles")
     st.markdown(
         """
-        What do countries innovate in? This app visualizes data on patents from [PATSTAT](https://www.epo.org/en/searching-for-patents/business/patstat) using the methodology from [WIPO WIPR (Miguelez et al 2019)](https://tind.wipo.int/record/40558/files/wipo_pub_econstat_wp_58.pdf), and on scientific publications from [OpenAlex](https://openalex.org/). The data is aggregated to the country-technology class / country-scientific concept levels.
+        What do countries innovate in? This app visualizes data on patents from [PATSTAT 2024](https://www.epo.org/en/searching-for-patents/business/patstat) using the methodology from [WIPO WIPR (Miguelez et al 2019)](https://tind.wipo.int/record/40558/files/wipo_pub_econstat_wp_58.pdf), and on scientific publications from [OpenAlex](https://openalex.org/). The data is aggregated to the country-technology class / country-scientific concept levels.
 
         Publications and patents data cover the 10-year period 2013-2022.
         """
@@ -415,7 +415,6 @@ with tabs[0]:
     else:
         raise ValueError("Invalid color parameter")
 
-
     # -------------------------#
     # Plot treemap
     # if (
@@ -459,52 +458,70 @@ with tabs[0]:
 with tabs[1]:
     # Publications for the world, split by country
     st.write("### Total Publications by Country")
-    global_publications = works_all.groupby('country_code')[plot_col_oa_constraint].sum().reset_index()
-    global_publications = global_publications.merge(country_codes, on='country_code')
+    global_publications = (
+        works_all.groupby("country_code")[plot_col_oa_constraint].sum().reset_index()
+    )
+    global_publications = global_publications.merge(country_codes, on="country_code")
 
-    st.markdown(f"Total publications: {global_publications[plot_col_oa_constraint].sum():,.0f}")
-    
+    st.markdown(
+        f"Total publications: {global_publications[plot_col_oa_constraint].sum():,.0f}"
+    )
+
     fig_global_pub = px.treemap(
         global_publications,
-        path=['country_name'],
+        path=["country_name"],
         values=plot_col_oa_constraint,
     )
     st.plotly_chart(fig_global_pub, use_container_width=True)
-    
+
     # Patents for the world, split by country
     st.write("### Total Patents by Country")
-    global_patents = patents.groupby('country_code')['patent_count'].sum().reset_index()
-    global_patents = global_patents.merge(country_codes, on='country_code')
+    global_patents = patents.groupby("country_code")["patent_count"].sum().reset_index()
+    global_patents = global_patents.merge(country_codes, on="country_code")
 
     st.markdown(f"Total patents: {global_patents['patent_count'].sum():,.0f}")
-    
+
     fig_global_pat = px.treemap(
         global_patents,
-        path=['country_name'],
-        values='patent_count',
+        path=["country_name"],
+        values="patent_count",
     )
     st.plotly_chart(fig_global_pat, use_container_width=True)
-    
+
     # Publications for the world, split by IPC4 subclass
     st.write("### World Total Publications by Scientific Concept")
-    global_pub_concept = works_all.groupby('concept_name')[plot_col_oa_constraint].sum().reset_index()
-    
+    global_pub_concept = (
+        works_all.groupby(["broad_concept_name", "concept_name"])[
+            plot_col_oa_constraint
+        ]
+        .sum()
+        .reset_index()
+    )
+
     fig_global_pub_concept = px.treemap(
         global_pub_concept,
-        path=['concept_name'],
+        path=["broad_concept_name", "concept_name"],
         values=plot_col_oa_constraint,
+        hover_name="concept_name",
     )
     st.plotly_chart(fig_global_pub_concept, use_container_width=True)
-    
+
     # Patents for the world, split by IPC4 subclass
     st.write("### World Total Patents by IPC4 Subclass")
-    global_pat_subclass = patents.groupby(['subclass_code', 'subclass_name'])['patent_count'].sum().reset_index()
-    
+    global_pat_subclass = (
+        patents.groupby(["subclass_code", "subclass_name", "section_name"])[
+            "patent_count"
+        ]
+        .sum()
+        .reset_index()
+    )
+
     fig_global_pat_subclass = px.treemap(
         global_pat_subclass,
-        path=['subclass_name'],
-        values='patent_count',
-        hover_data=['subclass_code'],
+        path=["section_name", "subclass_name"],
+        values="patent_count",
+        hover_name="subclass_name",
+        hover_data=["subclass_code", "section_name"],
     )
     st.plotly_chart(fig_global_pat_subclass, use_container_width=True)
 
