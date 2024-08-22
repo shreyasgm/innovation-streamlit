@@ -347,108 +347,167 @@ else:
     raise ValueError("Invalid color parameter")
 
 # -------------------------#
-# Plot treemap
-# if (
-#     selected_oa_transformations == "none"
-#     and selected_oa_color_parameter == "broad concept"
-# ):
-#     fig_oa_path = ["broad_concept_name", "concept_name"]
-# else:
-#     fig_oa_path = ["concept_name"]
-fig_oa_path = ["broad_concept_name", "concept_name"]
-
-if selected_oa_color_parameter == "concept sophistication (prody)":
-    fig_oa_color = color_col_oa
-    fig_oa_color_continous_scale = px.colors.sequential.Inferno
-    fig_oa_range_color = publications_prody_color_range[color_col_oa]
-    fig_oa_labels_dict = {color_col_oa: "PRODY"}
-else:
-    fig_oa_color = None
-    fig_oa_color_continous_scale = None
-    fig_oa_range_color = None
-    fig_oa_labels_dict = None
-
-fig_oa = px.treemap(
-    country_works_count[country_works_count[plot_col_oa] > 0],
-    path=fig_oa_path,
-    values=plot_col_oa,
-    hover_name="concept_name",
-    color=fig_oa_color,
-    color_continuous_scale=fig_oa_color_continous_scale,
-    range_color=fig_oa_range_color,
-    labels=fig_oa_labels_dict,
-)
-fig_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25))
-
-st.plotly_chart(fig_oa, use_container_width=True)
-
+# Plot treemaps
 # -------------------------#
-# Plot patents treemap
-# -------------------------#
+# Tabbed interface
+tabs = st.tabs(["Country Treemaps", "Global Treemaps"])
 
-st.markdown("### Patent Families in Technologies (IPC4 Subclasses)")
+with tabs[0]:
+    # -------------------------#
+    # if (
+    #     selected_oa_transformations == "none"
+    #     and selected_oa_color_parameter == "broad concept"
+    # ):
+    #     fig_oa_path = ["broad_concept_name", "concept_name"]
+    # else:
+    #     fig_oa_path = ["concept_name"]
+    fig_oa_path = ["broad_concept_name", "concept_name"]
 
-st.markdown(f"Total patent families: {country_total_patents_count:,.0f}")
+    if selected_oa_color_parameter == "concept sophistication (prody)":
+        fig_oa_color = color_col_oa
+        fig_oa_color_continous_scale = px.colors.sequential.Inferno
+        fig_oa_range_color = publications_prody_color_range[color_col_oa]
+        fig_oa_labels_dict = {color_col_oa: "PRODY"}
+    else:
+        fig_oa_color = None
+        fig_oa_color_continous_scale = None
+        fig_oa_range_color = None
+        fig_oa_labels_dict = None
 
-# Prepare plotting column - patents
+    fig_oa = px.treemap(
+        country_works_count[country_works_count[plot_col_oa] > 0],
+        path=fig_oa_path,
+        values=plot_col_oa,
+        hover_name="concept_name",
+        color=fig_oa_color,
+        color_continuous_scale=fig_oa_color_continous_scale,
+        range_color=fig_oa_range_color,
+        labels=fig_oa_labels_dict,
+    )
+    fig_oa.update_layout(margin=dict(t=50, l=25, r=25, b=25))
 
-# Column to plot - rca or not
-plot_col_pat_raw = "patent_count"
-if selected_pat_transformations == "none":
-    plot_col_pat = plot_col_pat_raw
-elif selected_pat_transformations == "rca":
-    plot_col_pat = plot_col_pat_raw + "_rca"
-else:
-    raise ValueError("Invalid transformation")
+    st.plotly_chart(fig_oa, use_container_width=True)
 
-# Column to plot - color
-if selected_pat_color_parameter == "subclass sophistication (prody)":
-    color_col_pat = f"{plot_col_pat_raw}_prody_count"
-elif selected_pat_color_parameter == "patent class":
-    color_col_pat = None
-else:
-    raise ValueError("Invalid color parameter")
+    # -------------------------#
+    # Plot patents treemap
+    # -------------------------#
+
+    st.markdown("### Patent Families in Technologies (IPC4 Subclasses)")
+
+    st.markdown(f"Total patent families: {country_total_patents_count:,.0f}")
+
+    # Prepare plotting column - patents
+
+    # Column to plot - rca or not
+    plot_col_pat_raw = "patent_count"
+    if selected_pat_transformations == "none":
+        plot_col_pat = plot_col_pat_raw
+    elif selected_pat_transformations == "rca":
+        plot_col_pat = plot_col_pat_raw + "_rca"
+    else:
+        raise ValueError("Invalid transformation")
+
+    # Column to plot - color
+    if selected_pat_color_parameter == "subclass sophistication (prody)":
+        color_col_pat = f"{plot_col_pat_raw}_prody_count"
+    elif selected_pat_color_parameter == "patent class":
+        color_col_pat = None
+    else:
+        raise ValueError("Invalid color parameter")
 
 
-# -------------------------#
-# Plot treemap
-# if (
-#     selected_pat_transformations == "none"
-#     and selected_pat_color_parameter == "patent class"
-# ):
-#     fig_pat_path = ["section_name", "subclass_name"]
-# else:
-#     fig_pat_path = ["subclass_name"]
-fig_pat_path = ["section_name", "subclass_name"]
+    # -------------------------#
+    # Plot treemap
+    # if (
+    #     selected_pat_transformations == "none"
+    #     and selected_pat_color_parameter == "patent class"
+    # ):
+    #     fig_pat_path = ["section_name", "subclass_name"]
+    # else:
+    #     fig_pat_path = ["subclass_name"]
+    fig_pat_path = ["section_name", "subclass_name"]
 
-if selected_pat_color_parameter == "subclass sophistication (prody)":
-    fig_pat_color = color_col_pat
-    fig_pat_color_continous_scale = px.colors.sequential.Inferno
-    fig_pat_range_color = patents_prody_color_range[color_col_pat]
-    fig_pat_labels_dict = {color_col_pat: "PRODY"}
-else:
-    fig_pat_color = None
-    fig_pat_color_continous_scale = None
-    fig_pat_range_color = None
-    fig_pat_labels_dict = None
+    if selected_pat_color_parameter == "subclass sophistication (prody)":
+        fig_pat_color = color_col_pat
+        fig_pat_color_continous_scale = px.colors.sequential.Inferno
+        fig_pat_range_color = patents_prody_color_range[color_col_pat]
+        fig_pat_labels_dict = {color_col_pat: "PRODY"}
+    else:
+        fig_pat_color = None
+        fig_pat_color_continous_scale = None
+        fig_pat_range_color = None
+        fig_pat_labels_dict = None
 
-fig_pat = px.treemap(
-    country_patents_count[country_patents_count[plot_col_pat] > 0],
-    path=fig_pat_path,
-    values=plot_col_pat,
-    hover_name="subclass_name",
-    hover_data=[
-        "subclass_code",
-        "section_name",
-    ],
-    color=fig_pat_color,
-    color_continuous_scale=fig_pat_color_continous_scale,
-    range_color=fig_pat_range_color,
-    labels=fig_pat_labels_dict,
-)
+    fig_pat = px.treemap(
+        country_patents_count[country_patents_count[plot_col_pat] > 0],
+        path=fig_pat_path,
+        values=plot_col_pat,
+        hover_name="subclass_name",
+        hover_data=[
+            "subclass_code",
+            "section_name",
+        ],
+        color=fig_pat_color,
+        color_continuous_scale=fig_pat_color_continous_scale,
+        range_color=fig_pat_range_color,
+        labels=fig_pat_labels_dict,
+    )
 
-fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
-st.plotly_chart(fig_pat, use_container_width=True)
+    fig_pat.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+    st.plotly_chart(fig_pat, use_container_width=True)
+
+with tabs[1]:
+    # Publications for the world, split by country
+    st.write("### Total Publications by Country")
+    global_publications = works_all.groupby('country_code')[plot_col_oa_constraint].sum().reset_index()
+    global_publications = global_publications.merge(country_codes, on='country_code')
+
+    st.markdown(f"Total publications: {global_publications[plot_col_oa_constraint].sum():,.0f}")
+    
+    fig_global_pub = px.treemap(
+        global_publications,
+        path=['country_name'],
+        values=plot_col_oa_constraint,
+    )
+    st.plotly_chart(fig_global_pub, use_container_width=True)
+    
+    # Patents for the world, split by country
+    st.write("### Total Patents by Country")
+    global_patents = patents.groupby('country_code')['patent_count'].sum().reset_index()
+    global_patents = global_patents.merge(country_codes, on='country_code')
+
+    st.markdown(f"Total patents: {global_patents['patent_count'].sum():,.0f}")
+    
+    fig_global_pat = px.treemap(
+        global_patents,
+        path=['country_name'],
+        values='patent_count',
+    )
+    st.plotly_chart(fig_global_pat, use_container_width=True)
+    
+    # Publications for the world, split by IPC4 subclass
+    st.write("### World Total Publications by Scientific Concept")
+    global_pub_concept = works_all.groupby('concept_name')[plot_col_oa_constraint].sum().reset_index()
+    
+    fig_global_pub_concept = px.treemap(
+        global_pub_concept,
+        path=['concept_name'],
+        values=plot_col_oa_constraint,
+    )
+    st.plotly_chart(fig_global_pub_concept, use_container_width=True)
+    
+    # Patents for the world, split by IPC4 subclass
+    st.write("### World Total Patents by IPC4 Subclass")
+    global_pat_subclass = patents.groupby(['subclass_code', 'subclass_name'])['patent_count'].sum().reset_index()
+    
+    fig_global_pat_subclass = px.treemap(
+        global_pat_subclass,
+        path=['subclass_name'],
+        values='patent_count',
+        hover_data=['subclass_code'],
+    )
+    st.plotly_chart(fig_global_pat_subclass, use_container_width=True)
+
 
 # -------------------------#
 # Write footer
